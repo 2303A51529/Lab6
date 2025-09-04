@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Banking App • LoanApplication (Builder Pattern)</title>
+  <style>
+    :root {
+      --bg: #0f172a;         /* slate-900 */
+      --panel: #111827;      /* gray-900 */
+      --panel-2: #0b1220;    
+      --muted: #94a3b8;      /* slate-400 */
+      --text: #e5e7eb;       /* gray-200 */
+      --primary: #22c55e;    /* green-500 */
+      --primary-2: #16a34a;  /* green-600 */
+      --accent: #60a5fa;     /* blue-400 */
+      --warn: #f59e0b;       /* amber-500 */
+      --danger: #ef4444;     /* red-500 */
+      --ok: #34d399;         /* emerald-400 */
+      --radius: 16px;
+      --shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+      background: radial-gradient(1200px 800px at 10% 0%, #0b1220, transparent),
+                  radial-gradient(1000px 700px at 90% -10%, #0b1220, transparent),
+                  var(--bg);
+      color: var(--text);
+      line-height: 1.4;
+    }
+
+    header {
+      position: sticky; top: 0; z-index: 10;
+      background: linear-gradient(180deg, rgba(17,24,39,.95), rgba(17,24,39,.7));
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(148,163,184,.1);
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 18px 20px; }
+
+    .title {
+      display: flex; align-items: center; gap: 14px;
+    }
+    .logo {
+      width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg,#22c55e, #60a5fa);
+      display: grid; place-items: center; color: #0b1220; font-weight: 800; box-shadow: var(--shadow);
+    }
+    .subtitle { color: var(--muted); font-size: 14px; }
+
+    main.container { padding-top: 22px; padding-bottom: 40px; }
+
+    .grid {
+      display: grid; gap: 18px;
+      grid-template-columns: repeat(12, 1fr);
+    }
+
+    .card {
+      grid-column: span 8;
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      border: 1px solid rgba(148,163,184,.12);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .side { grid-column: span 4; }
+
+    @media (max-width: 1000px) {
+      .card, .side { grid-column: 1 / -1; }
+    }
+
+    h2 { margin: 8px 0 14px; font-size: 20px; }
+    fieldset { border: 1px dashed rgba(148,163,184,.2); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+    legend { color: var(--muted); padding: 0 8px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+
+    .row { display: grid; gap: 12px; grid-template-columns: repeat(12, 1fr); margin-bottom: 10px; }
+    .row > label { grid-column: span 6; }
+    .row > label.full { grid-column: 1 / -1; }
+
+    label { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+
+    input, select, textarea {
+      background: #0b1220; color: var(--text);
+      border: 1px solid rgba(148,163,184,.2);
+      border-radius: 12px; padding: 10px 12px; font-size: 14px;
+      outline: none; transition: border-color .2s, box-shadow .2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(96,165,250,.15);
+    }
+
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+    button {
+      background: var(--primary); border: none; color: #041314; font-weight: 700;
+      padding: 10px 14px; border-radius: 12px; cursor: pointer; box-shadow: var(--shadow);
+      transition: transform .05s ease, filter .2s;
+    }
+    button:hover { filter: brightness(1.03); }
+    button:active { transform: translateY(1px); }
+    .ghost { background: transparent; color: var(--text); border: 1px solid rgba(148,163,184,.25); }
+    .danger { background: var(--danger); color: #fff; }
+    .secondary { background: #334155; color: #e2e8f0; }
+
+    .output { background: #0b1220; border: 1px solid rgba(148,163,184,.2); border-radius: 12px; padding: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 13px; white-space: pre-wrap; }
+
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(148,163,184,.25);
+      background: linear-gradient(180deg, rgba(148,163,184,.08), rgba(148,163,184,.02));
+      font-size: 12px; color: var(--muted);
+    }
+
+    .stage-grid { display: grid; gap: 10px; }
+    .stage { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 10px; padding: 10px; border: 1px solid rgba(148,163,184,.2); border-radius: 12px; background: #0b1220; }
+    .dot { width: 14px; height: 14px; border-radius: 50%; background: #334155; border: 2px solid #1f2937; }
+    .dot.ok { background: var(--ok); }
+    .dot.wait { background: var(--warn); }
+    .dot.no { background: var(--danger); }
+    .stage small { color: var(--muted); }
+
+    .progress {
+      height: 10px; border-radius: 999px; background: #0b1220; border: 1px solid rgba(148,163,184,.2);
+      overflow: hidden; margin-top: 8px;
+    }
+    .bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: width .4s ease; }
+
+    .note { color: var(--muted); font-size: 12px; }
+    .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 12px; padding: 2px 6px; border-radius: 6px; border: 1px solid rgba(148,163,184,.3); background: rgba(148,163,184,.1); }
+
+    footer { text-align: center; color: var(--muted); padding: 18px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="title">
+        <div class="logo">₹</div>
+        <div>
+          <h1 style="margin:0">Banking App – LoanApplication</h1>
+          <div class="subtitle">Builder Pattern • Step-by-step object construction in vanilla JS</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="grid">
+      <section class="card">
+        <h2>1) Enter Details</h2>
+        <form id="loan-form">
+          <fieldset>
+            <legend>Customer</legend>
+            <div class="row">
+              <label>
+                Full Name
+                <input required name="fullName" placeholder="e.g., Ananya Sharma" />
+              </label>
+              <label>
+                Email
+                <input required type="email" name="email" placeholder="ananya@example.com" />
+              </label>
+              <label>
+                Phone
+                <input required name="phone" placeholder="+91-98765-43210" />
+              </label>
+              <label>
+                PAN (optional)
+                <input name="pan" placeholder="ABCDE1234F" />
+              </label>
+              <label class="full">
+                Address
+                <input name="address" placeholder="Flat / Street / City" />
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Loan</legend>
+            <div class="row">
+              <label>
+                Loan Type
+                <select name="loanType" id="loanType">
+                  <option value="HOME">Home Loan</option>
+                  <option value="PERSONAL">Personal Loan</option>
+                  <option value="EDUCATION">Education Loan</option>
+                  <option value="AUTO">Auto Loan</option>
+                  <option value="BUSINESS">Business Loan</option>
+                </select>
+              </label>
+              <label>
+                Amount (₹)
+                <input required type="number" name="amount" min="10000" step="1000" value="500000" />
+              </label>
+              <label>
+                Tenure (months)
+                <input required type="number" name="tenure" min="6" max="360" value="60" />
+              </label>
+              <label>
+                Interest (%)
+                <input type="number" name="interest" step="0.01" id="interest" />
+                <span class="note">Auto-fills from loan type; you can override.</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Documents</legend>
+            <div class="row">
+              <label class="full">
+                Upload (simulated)
+                <input type="file" id="docInput" multiple />
+                <div class="note">Files are not uploaded anywhere; we only list their names for the demo.</div>
+              </label>
+              <label class="full">
+                Notes
+                <textarea name="docNotes" rows="2" placeholder="Any notes about documents…"></textarea>
+              </label>
+            </div>
+            <div id="docList" class="note"></div>
+          </fieldset>
+
+          <div class="actions">
+            <button type="button" id="buildBtn">Build Application</button>
+            <button type="button" class="secondary" id="buildStepBtn">Build Step-by-Step</button>
+            <button type="reset" class="ghost">Reset Form</button>
+          </div>
+        </form>
+
+        <h2 style="margin-top:20px">2) Built Object</h2>
+        <div class="output" id="jsonOut">(built LoanApplication JSON will appear here)</div>
+
+        <div style="margin-top:16px">
+          <span class="pill">Tip: Press <span class="kbd">Build Step-by-Step</span> to see the Builder in action.</span>
+        </div>
+      </section>
+
+      <aside class="card side">
+        <h2>3) Approval Stages</h2>
+        <div class="stage-grid" id="stages"></div>
+        <div class="progress"><div class="bar" id="bar"></div></div>
+        <div class="actions" style="margin-top:10px">
+          <button id="simulateBtn">Simulate Approvals</button>
+          <button class="ghost" id="resetStagesBtn">Reset Stages</button>
+        </div>
+        <p class="note">Stages: KYC → Credit Check → Underwriting → Final Approval</p>
+      </aside>
+    </div>
+  </main>
+
+  <footer>
+    Built with the <strong>Builder Pattern</strong> in vanilla JavaScript • No frameworks
+  </footer>
+
+  <script>
+    /**
+     * Builder Pattern for LoanApplication
+     * -----------------------------------
+     * - LoanApplicationBuilder collects data in steps with chainable setters.
+     * - build() returns an immutable LoanApplication object.
+     * - Director (optional) coordinates common build sequences.
+     */
+
+    class LoanApplication {
+      constructor({ customer, loan, documents, approvals, createdAt }) {
+        this.customer = Object.freeze(customer);
+        this.loan = Object.freeze(loan);
+        this.documents = Object.freeze(documents);
+        this.approvals = Object.freeze(approvals);
+        this.createdAt = createdAt;
+        Object.freeze(this);
+      }
+    }
+
+    class LoanApplicationBuilder {
+      constructor() { this.reset(); }
+      reset() {
+        this._customer = { fullName: '', email: '', phone: '', pan: '', address: '' };
+        this._loan = { type: 'HOME', amount: 0, tenure: 0, interest: 0, emi: 0 };
+        this._documents = { files: [], notes: '' };
+        this._approvals = [
+          { key: 'KYC', status: 'PENDING', by: null, at: null },
+          { key: 'CREDIT_CHECK', status: 'PENDING', by: null, at: null },
+          { key: 'UNDERWRITING', status: 'PENDING', by: null, at: null },
+          { key: 'FINAL_APPROVAL', status: 'PENDING', by: null, at: null },
+        ];
+        return this;
+      }
+      setCustomer({ fullName, email, phone, pan, address }) { this._customer = { fullName, email, phone, pan, address }; return this; }
+      setLoanType(type) { this._loan.type = type; return this; }
+      setAmount(amount) { this._loan.amount = Number(amount); return this; }
+      setTenure(months) { this._loan.tenure = Number(months); return this; }
+      setInterest(ratePct) { this._loan.interest = Number(ratePct); return this; }
+      setDocuments({ files, notes }) { this._documents = { files: [...files], notes: notes || '' }; return this; }
+      approveStage(key, by = 'system') {
+        const s = this._approvals.find(x => x.key === key);
+        if (s) { s.status = 'APPROVED'; s.by = by; s.at = new Date().toISOString(); }
+        return this;
+      }
+      calculateEMI() {
+        const P = this._loan.amount;
+        const r = this._loan.interest / 12 / 100; // monthly
+        const n = this._loan.tenure;
+        if (P <= 0 || r <= 0 || n <= 0) { this._loan.emi = 0; return this; }
+        const emi = P * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+        this._loan.emi = Math.round(emi);
+        return this;
+      }
+      build() {
+        // Basic validation
+        if (!this._customer.fullName || !this._customer.email || !this._loan.amount || !this._loan.tenure) {
+          throw new Error('Missing required fields. Please fill customer, amount, and tenure.');
+        }
+        // Construct immutable object
+        const app = new LoanApplication({
+          customer: this._customer,
+          loan: this._loan,
+          documents: this._documents,
+          approvals: this._approvals,
+          createdAt: new Date().toISOString(),
+        });
+        // Reset builder for next use (classic Builder behavior)
+        this.reset();
+        return app;
+      }
+    }
+
+    // Optional Director for common recipes
+    class LoanDirector {
+      constructor(builder) { this.builder = builder; }
+      standardBuild({ customer, loan, documents }) {
+        return this.builder
+          .setCustomer(customer)
+          .setLoanType(loan.type)
+          .setAmount(loan.amount)
+          .setTenure(loan.tenure)
+          .setInterest(loan.interest)
+          .calculateEMI()
+          .setDocuments(documents)
+          .build();
+      }
+    }
+
+    // --- UI Helpers ---
+    const form = document.getElementById('loan-form');
+    const loanTypeSel = document.getElementById('loanType');
+    const interestInput = document.getElementById('interest');
+    const docInput = document.getElementById('docInput');
+    const docList = document.getElementById('docList');
+    const jsonOut = document.getElementById('jsonOut');
+    const buildBtn = document.getElementById('buildBtn');
+    const buildStepBtn = document.getElementById('buildStepBtn');
+
+    // Interest presets per loan type (you can tweak)
+    const DEFAULT_RATES = {
+      HOME: 8.35,
+      PERSONAL: 13.5,
+      EDUCATION: 9.25,
+      AUTO: 9.1,
+      BUSINESS: 11.75,
+    };
+
+    function updateInterestFromType() {
+      const t = loanTypeSel.value;
+      const v = DEFAULT_RATES[t] ?? 10.0;
+      if (!interestInput.value) interestInput.value = v;
+    }
+    loanTypeSel.addEventListener('change', updateInterestFromType);
+    updateInterestFromType();
+
+    docInput.addEventListener('change', () => {
+      const files = Array.from(docInput.files || []);
+      if (!files.length) { docList.textContent = 'No files selected.'; return; }
+      docList.textContent = 'Selected: ' + files.map(f => f.name).join(', ');
+    });
+
+    const builder = new LoanApplicationBuilder();
+    const director = new LoanDirector(builder);
+
+    function collectForm() {
+      const fd = new FormData(form);
+      const customer = {
+        fullName: fd.get('fullName')?.toString().trim(),
+        email: fd.get('email')?.toString().trim(),
+        phone: fd.get('phone')?.toString().trim(),
+        pan: fd.get('pan')?.toString().trim(),
+        address: fd.get('address')?.toString().trim(),
+      };
+      const loan = {
+        type: fd.get('loanType'),
+        amount: Number(fd.get('amount')),
+        tenure: Number(fd.get('tenure')),
+        interest: Number(fd.get('interest') || DEFAULT_RATES[fd.get('loanType')] || 10.0),
+      };
+      const files = Array.from(docInput.files || []).map(f => ({ name: f.name, size: f.size }));
+      const documents = { files, notes: fd.get('docNotes')?.toString() || '' };
+      return { customer, loan, documents };
+    }
+
+    function showJSON(app) {
+      jsonOut.textContent = JSON.stringify(app, null, 2);
+    }
+
+    buildBtn.addEventListener('click', () => {
+      try {
+        const data = collectForm();
+        const app = director.standardBuild(data);
+        showJSON(app);
+        window.currentApplication = app; // stash for approvals demo
+      } catch (err) {
+        jsonOut.textContent = '❌ ' + err.message;
+      }
+    });
+
+    buildStepBtn.addEventListener('click', () => {
+      try {
+        const data = collectForm();
+        // Manual, visible steps
+        builder.reset();
+        builder.setCustomer(data.customer);
+        builder.setLoanType(data.loan.type);
+        builder.setAmount(data.loan.amount);
+        builder.setTenure(data.loan.tenure);
+        builder.setInterest(data.loan.interest);
+        builder.calculateEMI();
+        builder.setDocuments(data.documents);
+        const app = builder.build();
+        showJSON(app);
+        window.currentApplication = app;
+      } catch (err) {
+        jsonOut.textContent = '❌ ' + err.message;
+      }
+    });
+
+    // --- Approval stage UI ---
+    const STAGES = [
+      { key: 'KYC', label: 'KYC' },
+      { key: 'CREDIT_CHECK', label: 'Credit Check' },
+      { key: 'UNDERWRITING', label: 'Underwriting' },
+      { key: 'FINAL_APPROVAL', label: 'Final Approval' },
+    ];
+
+    const stagesHost = document.getElementById('stages');
+    function renderStages(state = {}) {
+      stagesHost.innerHTML = '';
+      STAGES.forEach(s => {
+        const st = state[s.key] || { status: 'PENDING', by: null, at: null };
+        const wrap = document.createElement('div');
+        wrap.className = 'stage';
+        const dot = document.createElement('div');
+        dot.className = 'dot ' + (st.status === 'APPROVED' ? 'ok' : st.status === 'PENDING' ? '' : 'no');
+        const info = document.createElement('div');
+        info.innerHTML = `<strong>${s.label}</strong><br/><small>${st.status}${st.by ? ` · by ${st.by}` : ''}${st.at ? ` · ${new Date(st.at).toLocaleString()}` : ''}</small>`;
+        const btn = document.createElement('button');
+        btn.className = 'ghost'; btn.textContent = st.status === 'APPROVED' ? 'Revoke' : 'Approve';
+        btn.addEventListener('click', () => toggleStage(s.key));
+        wrap.appendChild(dot); wrap.appendChild(info); wrap.appendChild(btn);
+        stagesHost.appendChild(wrap);
+      });
+      updateBar();
+    }
+
+    function getStageStateFromApp(app) {
+      const o = {};
+      (app?.approvals || []).forEach(a => { o[a.key] = a; });
+      return o;
+    }
+
+    function toggleStage(key) {
+      if (!window.currentApplication) return;
+      // Clone current app to a mutable object using a new builder
+      const b = new LoanApplicationBuilder();
+      const a = window.currentApplication;
+      b.setCustomer(a.customer)
+       .setLoanType(a.loan.type)
+       .setAmount(a.loan.amount)
+       .setTenure(a.loan.tenure)
+       .setInterest(a.loan.interest)
+       .setDocuments(a.documents);
+      const state = getStageStateFromApp(a);
+      const stage = state[key];
+      if (stage?.status === 'APPROVED') {
+        // revert to pending
+        // rebuild approvals from prior state with the selected as PENDING
+        const keys = STAGES.map(s => s.key);
+        b._approvals = keys.map(k => {
+          const prev = state[k] || { key: k, status: 'PENDING', by: null, at: null };
+          if (k === key) return { key: k, status: 'PENDING', by: null, at: null };
+          return { ...prev };
+        });
+      } else {
+        b._approvals = STAGES.map(s => ({ ...(state[s.key] || { key: s.key, status: 'PENDING', by: null, at: null }) }));
+        b.approveStage(key, 'officer@bank');
+      }
+      const newApp = b.calculateEMI().build();
+      window.currentApplication = newApp;
+      showJSON(newApp);
+      renderStages(getStageStateFromApp(newApp));
+    }
+
+    function updateBar() {
+      const state = getStageStateFromApp(window.currentApplication);
+      const total = STAGES.length;
+      const done = STAGES.filter(s => state[s.key]?.status === 'APPROVED').length;
+      const pct = Math.round((done/total)*100);
+      document.getElementById('bar').style.width = pct + '%';
+    }
+
+    // initial render
+    renderStages();
+
+    // Simulate approvals with delays
+    const simulateBtn = document.getElementById('simulateBtn');
+    const resetStagesBtn = document.getElementById('resetStagesBtn');
+
+    simulateBtn.addEventListener('click', async () => {
+      if (!window.currentApplication) { jsonOut.textContent = 'ℹ️ Build an application first.'; return; }
+      const order = STAGES.map(s => s.key);
+      for (let i = 0; i < order.length; i++) {
+        await new Promise(r => setTimeout(r, 700));
+        toggleStage(order[i]);
+      }
+    });
+
+    resetStagesBtn.addEventListener('click', () => {
+      if (!window.currentApplication) return renderStages();
+      // Rebuild app with all pending
+      const a = window.currentApplication;
+      const b = new LoanApplicationBuilder();
+      const newApp = b
+        .setCustomer(a.customer)
+        .setLoanType(a.loan.type)
+        .setAmount(a.loan.amount)
+        .setTenure(a.loan.tenure)
+        .setInterest(a.loan.interest)
+        .setDocuments(a.documents)
+        .build();
+      window.currentApplication = newApp;
+      showJSON(newApp);
+      renderStages();
+    });
+  </script>
+</body>
+</html>
